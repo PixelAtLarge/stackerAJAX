@@ -6,6 +6,11 @@ $(document).ready( function() {
 		var tags = $(this).find("input[name='tags']").val();
 		getUnanswered(tags);
 	});
+	$('.inspiration-getter').submit(function(event){
+		$('.results').html('');
+		var tags = $(this).find("input[name='answerers']").val();
+		getInspiration(tags);
+	})
 });
 
 // this function takes the question object returned by StackOverflow 
@@ -41,6 +46,37 @@ var showQuestion = function(question) {
 	return result;
 };
 
+var showAnswerer = function(item) {
+	
+	// clone our result template code
+	var result = $('.templates .answerer').clone();
+
+	// Set the answerer properties in result
+	var answerer = result.find('.answerer');
+	answerer.html("<p><a target='_blank' href=" + item.user.link 
+												+ " >" 
+												+ item.user.display_name 
+												+ "<a><p>" 
+	);
+
+	// set the gravatar in result
+	var gravatar = result.find('.gravatar');
+	gravatar.find("img").attr("src",item.user.profile_image);
+
+	// set the reputation property in result
+	var reputation = result.find('.reputation');
+	reputation.text(item.user.reputation);
+
+	// set the posts answered property in result
+	var posts = result.find('.posts');
+	posts.text(item.post_count);
+
+	// set the score property in result
+	var score = result.find('.score');
+	score.text(item.score);
+
+	return result;
+}
 
 // this function takes the results object from StackOverflow
 // and creates info about search results to be appended to DOM
@@ -88,5 +124,30 @@ var getUnanswered = function(tags) {
 	});
 };
 
+var getInspiration = function(tags) {
+	var request = {tagged: tags,
+								order: 'desc'};
+	
+		var result = $.ajax({
+		url: "http://api.stackexchange.com/2.2/tags/" + tags + "/top-answerers/all_time?site=stackoverflow",
+		data: request,
+		dataType: "jsonp",
+		type: "GET",
+		})
+	.done(function(result){
+		var searchResults = showSearchResults(request.tagged, result.items.length);
+
+		$('.search-results').html(searchResults);
+
+		$.each(result.items, function(i, item) {
+			var answerer = showAnswerer(item);
+			$('.results').append(answerer);
+		});
+	})
+	.fail(function(jqXHR, error, errorThrown){
+		var errorElem = showError(error);
+		$('.search-results').append(errorElem);
+	});
+};
 
 
